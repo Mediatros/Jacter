@@ -512,6 +512,19 @@
         "description": "Aidez-nous à continuer à construire Jacter",
         "button": "Faire un don"
       },
+      "updates": {
+        "title": "Mises à jour",
+        "description": "Vérifiez manuellement si une nouvelle version de Jacter est disponible. Aucune requête automatique n'est effectuée.",
+        "checkButton": "Vérifier les mises à jour",
+        "checking": "Vérification en cours...",
+        "upToDate": "Jacter est à jour.",
+        "available": "La version {{version}} est disponible.",
+        "installButton": "Télécharger et installer",
+        "downloading": "Téléchargement... {{progress}}%",
+        "installing": "Installation en cours...",
+        "error": "Échec de la vérification des mises à jour.",
+        "errorHint": "Si vous êtes derrière un proxy, assurez-vous qu'il autorise les connexions HTTPS sortantes vers GitHub (github.com, objects.githubusercontent.com)."
+      },
       "acknowledgments": {
         "title": "Remerciements",
         "whisper": {

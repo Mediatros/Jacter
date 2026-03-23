@@ -9,6 +9,7 @@ import { AppDataDirectory } from "../AppDataDirectory";
 import { AppLanguageSelector } from "../AppLanguageSelector";
 import { ExportImportSettings } from "../ExportImportSettings";
 import { LogDirectory } from "../debug";
+import UpdateChecker from "../../update-checker/UpdateChecker";
 
 export const AboutSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -73,6 +74,7 @@ export const AboutSettings: React.FC = () => {
           </Button>
         </SettingContainer>
 
+        <UpdateChecker grouped={true} />
         <AppDataDirectory descriptionMode="tooltip" grouped={true} />
         <ExportImportSettings grouped={true} />
         <LogDirectory grouped={true} />

@@ -1,208 +1,187 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { check } from "@tauri-apps/plugin-updater";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { listen } from "@tauri-apps/api/event";
 import { ProgressBar } from "../shared";
-import { useSettings } from "../../hooks/useSettings";
+import { Button } from "../ui/Button";
+import { SettingContainer } from "../ui/SettingContainer";
+
+type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "up-to-date"
+  | "available"
+  | "downloading"
+  | "installing"
+  | "error";
 
 interface UpdateCheckerProps {
-  className?: string;
+  grouped?: boolean;
 }
 
-const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
+const UpdateChecker: React.FC<UpdateCheckerProps> = ({ grouped = false }) => {
   const { t } = useTranslation();
-  // Update checking state
-  const [isChecking, setIsChecking] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [isInstalling, setIsInstalling] = useState(false);
+  const [status, setStatus] = useState<UpdateStatus>("idle");
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
-  const [showUpToDate, setShowUpToDate] = useState(false);
-
-  const { settings, isLoading } = useSettings();
-  const settingsLoaded = !isLoading && settings !== null;
-  const updateChecksEnabled = settings?.update_checks_enabled ?? false;
-
-  const upToDateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const isManualCheckRef = useRef(false);
-  const downloadedBytesRef = useRef(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const pendingUpdateRef = useRef<Update | null>(null);
+  const downloadedRef = useRef(0);
   const contentLengthRef = useRef(0);
+  const isBusyRef = useRef(false);
 
-  useEffect(() => {
-    // Wait for settings to load before doing anything
-    if (!settingsLoaded) return;
-
-    if (!updateChecksEnabled) {
-      if (upToDateTimeoutRef.current) {
-        clearTimeout(upToDateTimeoutRef.current);
-      }
-      setIsChecking(false);
-      setUpdateAvailable(false);
-      setShowUpToDate(false);
-      return;
-    }
-
-    checkForUpdates();
-
-    // Listen for update check events
-    const updateUnlisten = listen("check-for-updates", () => {
-      handleManualUpdateCheck();
-    });
-
-    return () => {
-      if (upToDateTimeoutRef.current) {
-        clearTimeout(upToDateTimeoutRef.current);
-      }
-      updateUnlisten.then((fn) => fn());
-    };
-  }, [settingsLoaded, updateChecksEnabled]);
-
-  // Update checking functions
-  const checkForUpdates = async () => {
-    if (!updateChecksEnabled || isChecking) return;
+  const handleCheck = async () => {
+    if (isBusyRef.current) return;
+    isBusyRef.current = true;
+    setStatus("checking");
+    setErrorMessage(null);
+    setUpdateVersion(null);
+    pendingUpdateRef.current = null;
 
     try {
-      setIsChecking(true);
       const update = await check();
-
       if (update) {
-        setUpdateAvailable(true);
-        setShowUpToDate(false);
+        pendingUpdateRef.current = update;
+        setUpdateVersion(update.version);
+        setStatus("available");
       } else {
-        setUpdateAvailable(false);
-
-        if (isManualCheckRef.current) {
-          setShowUpToDate(true);
-          if (upToDateTimeoutRef.current) {
-            clearTimeout(upToDateTimeoutRef.current);
-          }
-          upToDateTimeoutRef.current = setTimeout(() => {
-            setShowUpToDate(false);
-          }, 3000);
-        }
+        setStatus("up-to-date");
       }
     } catch (error) {
-      console.error("Failed to check for updates:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      setErrorMessage(msg);
+      setStatus("error");
     } finally {
-      setIsChecking(false);
-      isManualCheckRef.current = false;
+      isBusyRef.current = false;
     }
   };
 
-  const handleManualUpdateCheck = () => {
-    if (!updateChecksEnabled) return;
-    isManualCheckRef.current = true;
-    checkForUpdates();
-  };
+  const handleInstall = async () => {
+    const update = pendingUpdateRef.current;
+    if (!update || isBusyRef.current) return;
+    isBusyRef.current = true;
+    setStatus("downloading");
+    setDownloadProgress(0);
+    downloadedRef.current = 0;
+    contentLengthRef.current = 0;
 
-  const installUpdate = async () => {
-    if (!updateChecksEnabled) return;
     try {
-      setIsInstalling(true);
-      setDownloadProgress(0);
-      downloadedBytesRef.current = 0;
-      contentLengthRef.current = 0;
-      const update = await check();
-
-      if (!update) {
-        console.log("No update available during install attempt");
-        return;
-      }
-
       await update.downloadAndInstall((event) => {
-        switch (event.event) {
-          case "Started":
-            downloadedBytesRef.current = 0;
-            contentLengthRef.current = event.data.contentLength ?? 0;
-            break;
-          case "Progress":
-            downloadedBytesRef.current += event.data.chunkLength;
-            const progress =
-              contentLengthRef.current > 0
-                ? Math.round(
-                    (downloadedBytesRef.current / contentLengthRef.current) *
-                      100,
-                  )
-                : 0;
-            setDownloadProgress(Math.min(progress, 100));
-            break;
+        if (event.event === "Started") {
+          contentLengthRef.current = event.data.contentLength ?? 0;
+        } else if (event.event === "Progress") {
+          downloadedRef.current += event.data.chunkLength;
+          if (contentLengthRef.current > 0) {
+            const pct = Math.round(
+              (downloadedRef.current / contentLengthRef.current) * 100,
+            );
+            setDownloadProgress(Math.min(pct, 100));
+            if (pct >= 100) setStatus("installing");
+          }
         }
       });
       await relaunch();
     } catch (error) {
-      console.error("Failed to install update:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      setErrorMessage(msg);
+      setStatus("error");
     } finally {
-      setIsInstalling(false);
-      setDownloadProgress(0);
-      downloadedBytesRef.current = 0;
-      contentLengthRef.current = 0;
+      isBusyRef.current = false;
     }
   };
 
-  // Update status functions
-  const getUpdateStatusText = () => {
-    if (!updateChecksEnabled) {
-      return t("footer.updateCheckingDisabled");
-    }
-    if (isInstalling) {
-      return downloadProgress > 0 && downloadProgress < 100
-        ? t("footer.downloading", {
-            progress: downloadProgress.toString().padStart(3),
-          })
-        : downloadProgress === 100
-          ? t("footer.installing")
-          : t("footer.preparing");
-    }
-    if (isChecking) return t("footer.checkingUpdates");
-    if (showUpToDate) return t("footer.upToDate");
-    if (updateAvailable) return t("footer.updateAvailableShort");
-    return t("footer.checkForUpdates");
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const unlisten = listen("check-for-updates", handleCheck);
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
-  const getUpdateStatusAction = () => {
-    if (!updateChecksEnabled) return undefined;
-    if (updateAvailable && !isInstalling) return installUpdate;
-    if (!isChecking && !isInstalling && !updateAvailable)
-      return handleManualUpdateCheck;
-    return undefined;
-  };
-
-  const isUpdateDisabled = !updateChecksEnabled || isChecking || isInstalling;
-  const isUpdateClickable =
-    !isUpdateDisabled && (updateAvailable || (!isChecking && !showUpToDate));
+  const isBusy =
+    status === "checking" ||
+    status === "downloading" ||
+    status === "installing";
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      {isUpdateClickable ? (
-        <button
-          onClick={getUpdateStatusAction()}
-          disabled={isUpdateDisabled}
-          className={`transition-colors disabled:opacity-50 tabular-nums ${
-            updateAvailable
-              ? "text-logo-primary hover:text-logo-primary/80 font-medium"
-              : "text-text/60 hover:text-text/80"
-          }`}
-        >
-          {getUpdateStatusText()}
-        </button>
-      ) : (
-        <span className="text-text/60 tabular-nums">
-          {getUpdateStatusText()}
-        </span>
-      )}
+    <SettingContainer
+      title={t("settings.about.updates.title")}
+      description={t("settings.about.updates.description")}
+      grouped={grouped}
+      layout="stacked"
+      descriptionMode="inline"
+    >
+      <div className="space-y-3">
+        {status !== "idle" && (
+          <div className="text-sm">
+            {status === "checking" && (
+              <span className="text-text/60">
+                {t("settings.about.updates.checking")}
+              </span>
+            )}
+            {status === "up-to-date" && (
+              <span className="text-green-500">
+                {t("settings.about.updates.upToDate")}
+              </span>
+            )}
+            {status === "available" && (
+              <span className="text-logo-primary font-medium">
+                {t("settings.about.updates.available", {
+                  version: updateVersion,
+                })}
+              </span>
+            )}
+            {(status === "downloading" || status === "installing") && (
+              <div className="flex items-center gap-3">
+                <span className="text-text/60">
+                  {status === "installing"
+                    ? t("settings.about.updates.installing")
+                    : t("settings.about.updates.downloading", {
+                        progress: downloadProgress.toString().padStart(3),
+                      })}
+                </span>
+                {status === "downloading" && downloadProgress > 0 && (
+                  <ProgressBar
+                    progress={[{ id: "update", percentage: downloadProgress }]}
+                    size="large"
+                  />
+                )}
+              </div>
+            )}
+            {status === "error" && (
+              <div className="space-y-1">
+                <p className="text-red-400 font-medium">
+                  {t("settings.about.updates.error")}
+                </p>
+                <p className="text-text/60 font-mono text-xs break-all">
+                  {errorMessage}
+                </p>
+                <p className="text-text/40 text-xs italic">
+                  {t("settings.about.updates.errorHint")}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
-      {isInstalling && downloadProgress > 0 && downloadProgress < 100 && (
-        <ProgressBar
-          progress={[
-            {
-              id: "update",
-              percentage: downloadProgress,
-            },
-          ]}
-          size="large"
-        />
-      )}
-    </div>
+        <div className="flex gap-2">
+          {status === "available" && (
+            <Button variant="primary" size="md" onClick={handleInstall}>
+              {t("settings.about.updates.installButton")}
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleCheck}
+            disabled={isBusy}
+          >
+            {t("settings.about.updates.checkButton")}
+          </Button>
+        </div>
+      </div>
+    </SettingContainer>
   );
 };
 
