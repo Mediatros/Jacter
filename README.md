@@ -90,30 +90,145 @@ The process is entirely local:
 4. Configure your preferred keyboard shortcuts in Settings
 5. Start transcribing!
 
-### Development Setup
+### Build locally (recommended for corporate Macs)
 
-For detailed build instructions including platform-specific requirements, see [BUILD.md](BUILD.md).
+If your machine does not accept unsigned applications, build Jacter directly on your Mac. An app compiled locally is never flagged by Gatekeeper because it was never downloaded from the internet.
 
-**Prerequisites:** [Rust](https://rustup.rs/) (latest stable), [Bun](https://bun.sh/)
+#### Step 1 — Check prerequisites
+
+Run each command and check the expected output. If a command is not found, follow the install link.
+
+**Xcode Command Line Tools** (compiler, git, cmake — all in one)
 
 ```bash
-# Install dependencies
-bun install
-
-# Run in development mode
-bun run tauri dev
-# If cmake error on macOS:
-CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri dev
-
-# Build for production
-bun run tauri build
+xcode-select -p
+# Expected: /Library/Developer/CommandLineTools  (or /Applications/Xcode.app/...)
+# Not found? Run: xcode-select --install
 ```
 
-**VAD model (required):**
+**Homebrew** (package manager — optional but makes the rest easier)
+
+```bash
+brew --version
+# Expected: Homebrew 4.x.x
+# Not found? /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**Rust** (the compiler for the backend)
+
+```bash
+rustc --version
+# Expected: rustc 1.8x.x (...)
+# Not found? curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+#            then: source "$HOME/.cargo/env"
+```
+
+```bash
+cargo --version
+# Expected: cargo 1.8x.x (...)
+# Not found? Same install as Rust above — cargo comes with rustup
+```
+
+**Bun** (JavaScript runtime and package manager for the frontend)
+
+```bash
+bun --version
+# Expected: 1.x.x
+# Not found? curl -fsSL https://bun.sh/install | bash
+```
+
+**CMake** (required by some native dependencies)
+
+```bash
+cmake --version
+# Expected: cmake version 3.x.x
+# Not found? brew install cmake
+```
+
+**Git** (to clone the repo)
+
+```bash
+git --version
+# Expected: git version 2.x.x
+# Not found? xcode-select --install  (includes git)
+```
+
+Once all six commands return a version number, you are ready.
+
+---
+
+#### Step 2 — Clone the repo
+
+```bash
+git clone https://github.com/Mediatros/Jacter.git
+cd Jacter
+```
+
+#### Step 3 — Install dependencies
+
+```bash
+bun install
+```
+
+Expected: packages installed with no errors. Warnings are fine.
+
+#### Step 4 — Download the VAD model
+
+This file is required at runtime for voice activity detection. Without it the app will fail to start.
 
 ```bash
 mkdir -p src-tauri/resources/models
-curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.computer/silero_vad_v4.onnx
+curl -o src-tauri/resources/models/silero_vad_v4.onnx \
+     https://blob.handy.computer/silero_vad_v4.onnx
+```
+
+Verify:
+
+```bash
+ls -lh src-tauri/resources/models/silero_vad_v4.onnx
+# Expected: a file around 2.3 MB
+```
+
+#### Step 5 — Build
+
+```bash
+bun run tauri build
+```
+
+The first build downloads and compiles all Rust dependencies — this takes **10 to 30 minutes** depending on your machine. Subsequent builds are much faster.
+
+If you get a CMake error:
+
+```bash
+CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri build
+```
+
+#### Step 6 — Install
+
+The compiled app is at:
+
+```
+src-tauri/target/release/bundle/macos/Jacter.app
+```
+
+Copy it to your Applications folder:
+
+```bash
+cp -R src-tauri/target/release/bundle/macos/Jacter.app /Applications/
+```
+
+Then launch it from Spotlight or `/Applications`. No certificate warning, no Gatekeeper block.
+
+---
+
+#### Updating to a new version
+
+```bash
+cd Jacter
+git pull origin main
+bun install          # in case frontend deps changed
+bun run tauri build
+cp -R src-tauri/target/release/bundle/macos/Jacter.app /Applications/
 ```
 
 ---
