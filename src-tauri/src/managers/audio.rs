@@ -10,47 +10,10 @@ use tauri::Manager;
 
 fn set_mute(mute: bool) {
     // Expected behavior:
-    // - Windows: works on most systems using standard audio drivers.
     // - Linux: works on many systems (PipeWire, PulseAudio, ALSA),
     //   but some distros may lack the tools used.
     // - macOS: works on most standard setups via AppleScript.
     // If unsupported, fails silently.
-
-    #[cfg(target_os = "windows")]
-    {
-        unsafe {
-            use windows::Win32::{
-                Media::Audio::{
-                    eMultimedia, eRender, Endpoints::IAudioEndpointVolume, IMMDeviceEnumerator,
-                    MMDeviceEnumerator,
-                },
-                System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED},
-            };
-
-            macro_rules! unwrap_or_return {
-                ($expr:expr) => {
-                    match $expr {
-                        Ok(val) => val,
-                        Err(_) => return,
-                    }
-                };
-            }
-
-            // Initialize the COM library for this thread.
-            // If already initialized (e.g., by another library like Tauri), this does nothing.
-            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-
-            let all_devices: IMMDeviceEnumerator =
-                unwrap_or_return!(CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL));
-            let default_device =
-                unwrap_or_return!(all_devices.GetDefaultAudioEndpoint(eRender, eMultimedia));
-            let volume_interface = unwrap_or_return!(
-                default_device.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None)
-            );
-
-            let _ = volume_interface.SetMute(mute, std::ptr::null());
-        }
-    }
 
     #[cfg(target_os = "linux")]
     {
@@ -120,37 +83,6 @@ fn is_system_already_muted() -> bool {
             false
         }
         Err(_) => false,
-    }
-}
-
-#[cfg(target_os = "windows")]
-fn is_system_already_muted() -> bool {
-    unsafe {
-        use windows::Win32::{
-            Media::Audio::{
-                eMultimedia, eRender, Endpoints::IAudioEndpointVolume, IMMDeviceEnumerator,
-                MMDeviceEnumerator,
-            },
-            System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED},
-        };
-
-        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-        let enumerator: IMMDeviceEnumerator =
-            match CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL) {
-                Ok(e) => e,
-                Err(_) => return false,
-            };
-        let device = match enumerator.GetDefaultAudioEndpoint(eRender, eMultimedia) {
-            Ok(d) => d,
-            Err(_) => return false,
-        };
-        let volume: IAudioEndpointVolume =
-            match device.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None) {
-                Ok(v) => v,
-                Err(_) => return false,
-            };
-
-        volume.GetMute().unwrap_or(false.into()).as_bool()
     }
 }
 

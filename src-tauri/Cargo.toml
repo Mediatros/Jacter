@@ -87,15 +87,6 @@ tauri-plugin-global-shortcut = "2.3.1"
 tauri-plugin-single-instance = "2.3.2"
 tauri-plugin-updater = "2.9.0"
 
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.61.3", features = [
-  "Win32_Media_Audio_Endpoints",
-  "Win32_System_Com_StructuredStorage",
-  "Win32_System_Variant",
-  "Win32_Foundation",
-  "Win32_UI_WindowsAndMessaging",
-] }
-
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
 

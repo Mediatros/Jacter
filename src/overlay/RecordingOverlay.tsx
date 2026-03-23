@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import "./RecordingOverlay.css";
 import { commands } from "@/bindings";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
-import { getLanguageDirection } from "@/lib/utils/rtl";
 
 type OverlayState = "recording" | "transcribing" | "processing";
 
@@ -167,8 +166,6 @@ const RecordingOverlay: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pauseStartRef = useRef<number>(0);
-  const direction = getLanguageDirection(i18n.language);
-
   const handleCancel = useCallback(() => {
     commands.cancelOperation();
   }, []);
@@ -273,7 +270,6 @@ const RecordingOverlay: React.FC = () => {
 
   return (
     <div
-      dir={direction}
       className={`recording-overlay state-${state} ${isVisible ? "is-visible" : "is-hidden"}`}
     >
       <div className="overlay-left">

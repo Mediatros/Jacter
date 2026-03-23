@@ -422,10 +422,6 @@
         "title": "Niveau de journalisation",
         "description": "Définir le niveau de détail de la journalisation"
       },
-      "updateChecks": {
-        "label": "Vérifier les mises à jour",
-        "description": "Vérifier automatiquement les nouvelles versions de Jacter"
-      },
       "soundTheme": {
         "label": "Thème sonore",
         "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement"
@@ -534,20 +530,6 @@
         }
       }
     }
-  },
-  "footer": {
-    "downloadingModel": "Téléchargement de {{model}}...",
-    "checkingUpdates": "Recherche de mises à jour...",
-    "updateAvailable": "Mise à jour disponible : {{version}}",
-    "updateAvailableShort": "Mise à jour disponible",
-    "upToDate": "À jour",
-    "downloadUpdate": "Télécharger la mise à jour",
-    "restart": "Redémarrer",
-    "updateCheckingDisabled": "Vérification des mises à jour désactivée",
-    "downloading": "Téléchargement... {{progress}}%",
-    "installing": "Installation...",
-    "preparing": "Préparation...",
-    "checkForUpdates": "Rechercher des mises à jour"
   },
   "common": {
     "loading": "Chargement...",

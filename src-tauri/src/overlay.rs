@@ -35,13 +35,13 @@ const OVERLAY_HEIGHT: f64 = 38.0;
 
 #[cfg(target_os = "macos")]
 const OVERLAY_TOP_OFFSET: f64 = 46.0;
-#[cfg(any(target_os = "windows", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 const OVERLAY_TOP_OFFSET: f64 = 4.0;
 
 #[cfg(target_os = "macos")]
 const OVERLAY_BOTTOM_OFFSET: f64 = 15.0;
 
-#[cfg(any(target_os = "windows", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 const OVERLAY_BOTTOM_OFFSET: f64 = 40.0;
 
 #[cfg(target_os = "linux")]
@@ -103,35 +103,6 @@ fn init_gtk_layer_shell(overlay_window: &tauri::webview::WebviewWindow) -> bool 
     false
 }
 
-/// Forces a window to be topmost using Win32 API (Windows only)
-/// This is more reliable than Tauri's set_always_on_top which can be overridden
-#[cfg(target_os = "windows")]
-fn force_overlay_topmost(overlay_window: &tauri::webview::WebviewWindow) {
-    use windows::Win32::UI::WindowsAndMessaging::{
-        SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW,
-    };
-
-    // Clone because run_on_main_thread takes 'static
-    let overlay_clone = overlay_window.clone();
-
-    // Make sure the Win32 call happens on the UI thread
-    let _ = overlay_clone.clone().run_on_main_thread(move || {
-        if let Ok(hwnd) = overlay_clone.hwnd() {
-            unsafe {
-                // Force Z-order: make this window topmost without changing size/pos or stealing focus
-                let _ = SetWindowPos(
-                    hwnd,
-                    Some(HWND_TOPMOST),
-                    0,
-                    0,
-                    0,
-                    0,
-                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-                );
-            }
-        }
-    });
-}
 
 fn is_point_within_monitor(
     mouse_pos: (i32, i32),
@@ -393,9 +364,6 @@ fn show_overlay_state(app_handle: &AppHandle, state: &str) {
 
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         let _ = overlay_window.show();
-
-        #[cfg(target_os = "windows")]
-        force_overlay_topmost(&overlay_window);
 
         let _ = overlay_window.emit("show-overlay", state);
     }

@@ -494,10 +494,6 @@
         "title": "Log Level",
         "description": "Set the verbosity of logging"
       },
-      "updateChecks": {
-        "label": "Check for Updates",
-        "description": "Automatically check for new versions of Jacter"
-      },
       "soundTheme": {
         "label": "Sound Theme",
         "description": "Choose a sound theme for recording start and stop feedback"
@@ -606,20 +602,6 @@
         }
       }
     }
-  },
-  "footer": {
-    "downloadingModel": "Downloading {{model}}...",
-    "checkingUpdates": "Checking for updates...",
-    "updateAvailable": "Update available: {{version}}",
-    "updateAvailableShort": "Update available",
-    "upToDate": "Up to date",
-    "downloadUpdate": "Download Update",
-    "restart": "Restart",
-    "updateCheckingDisabled": "Update Checking Disabled",
-    "downloading": "Downloading... {{progress}}%",
-    "installing": "Installing...",
-    "preparing": "Preparing...",
-    "checkForUpdates": "Check for updates"
   },
   "common": {
     "loading": "Loading...",

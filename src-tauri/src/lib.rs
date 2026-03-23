@@ -176,11 +176,8 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                 show_main_window(app);
             }
             "check_updates" => {
-                let settings = settings::get_settings(app);
-                if settings.update_checks_enabled {
-                    show_main_window(app);
-                    let _ = app.emit("check-for-updates", ());
-                }
+                show_main_window(app);
+                let _ = app.emit("check-for-updates", ());
             }
             "copy_last_transcript" => {
                 tray::copy_last_transcript(app);
@@ -243,18 +240,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     utils::create_recording_overlay(app_handle);
 }
 
-#[tauri::command]
-#[specta::specta]
-fn trigger_update_check(app: AppHandle) -> Result<(), String> {
-    let settings = settings::get_settings(&app);
-    if !settings.update_checks_enabled {
-        return Ok(());
-    }
-    app.emit("check-for-updates", ())
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli_args: CliArgs) {
     // Parse console logging directives from RUST_LOG, falling back to info-level logging
@@ -305,7 +290,6 @@ pub fn run(cli_args: CliArgs) {
         shortcut::change_mute_while_recording_setting,
         shortcut::change_append_trailing_space_setting,
         shortcut::change_app_language_setting,
-        shortcut::change_update_checks_setting,
         shortcut::change_keyboard_implementation_setting,
         shortcut::get_keyboard_implementation,
         shortcut::change_show_tray_icon_setting,
@@ -313,7 +297,6 @@ pub fn run(cli_args: CliArgs) {
         shortcut::change_long_audio_threshold_setting,
         shortcut::handy_keys::start_handy_keys_recording,
         shortcut::handy_keys::stop_handy_keys_recording,
-        trigger_update_check,
         commands::cancel_operation,
         commands::toggle_pause,
         commands::get_app_dir_path,
