@@ -1,60 +1,73 @@
-# Parler
+# Jacter
 
-> **This is a personal fork of [cjpais/Handy](https://github.com/cjpais/Handy)** by Melvyn.
-> It adds custom features on top of the original Handy app while keeping full compatibility with upstream.
-
-## Custom Additions
-
-### Rebranding
-
-- **Full Handy to Parler rebrand** - new name, new app icon, updated identifiers across the entire codebase
-- **Geist Pixel font logo** - app name rendered with Geist Pixel Circle font for a distinctive look
-- **ParlerDev development flavor** - separate `com.melvynx.parler.dev` identifier to run dev and production builds side-by-side
-
-### Multi-Provider Post-Processing System
-
-- **Unified provider system** - post-process transcriptions with AI using multiple providers: OpenAI, Groq, Cerebras, Anthropic, OpenRouter, Gemini, Apple Intelligence (macOS ARM64)
-- **Saved processing models** - save provider + model combinations for quick reuse
-- **Numbered actions (1-9)** - create up to 9 custom post-processing actions with their own prompt and model, triggered via keyboard shortcuts during recording
-- **Post-processing promoted to stable** - moved from experimental to a core feature with its own settings tab
-- **System prompt enforcement** - action processing outputs only the final processed text, no extra commentary
-
-### History Improvements
-
-- **Post-processing tracking in history** - stores which action was used, displays both original and post-processed text side by side
-- **Model name tracking** - history entries now record which transcription model was used
-- **History reprocessing** - re-transcribe previously recorded audio with a different model directly from history
-
-### Recording Overlay Redesign
-
-- **New minimal overlay UI** - redesigned recording overlay with border-based style instead of shadows
-- **Pause/Resume support** - pause and resume recording mid-session with dedicated shortcut (F6) and overlay button
-- **Double-press cancel confirmation** - cancel requires two presses within 1.5s to prevent accidental cancellations
-- **Improved multi-monitor support** - hardened overlay positioning with intelligent fallback across monitors, handles mixed-DPI setups on macOS
-
-### Audio & System Integration
-
-- **Mute-aware audio feedback** - skips feedback sounds when system volume is muted (macOS + Windows)
-- **Recommended model badges** - Parakeet V3 and Whisper Turbo marked as "Recommended" in the model selector
-
-### Cleanup & Fixes
-
-- **Removed standalone Gemini settings** - Gemini configuration moved into the unified provider system
-- **Removed Windows builds** from release workflow (macOS-only focus)
-- **Pinned Tauri NPM packages** to match Rust crate versions for build stability
-- **Various overlay fixes** - bubble visibility on external displays, cursor position detection
+> **Personal fork of [Melvynx/Parler](https://github.com/Melvynx/Parler)** (itself a fork of [cjpais/Handy](https://github.com/cjpais/Handy)).
+> Jacter extends Parler with Ollama as a dedicated local post-processing provider and air-gap-friendly update management.
 
 ---
 
-**A free, open source, and extensible speech-to-text application.**
+## What Jacter Adds
 
-Parler is a cross-platform desktop application that provides speech transcription. Press a shortcut, speak, and have your words appear in any text field - locally or enhanced with cloud AI post-processing.
+### Ollama Local Provider
+
+- **Dedicated Ollama entry** in the post-processing provider list — no longer hidden under the generic "Custom" provider
+- **No API key required** — Ollama runs locally, so authentication is skipped
+- **Configurable port** — the base URL is editable directly in settings (`http://localhost:11434/v1` by default)
+- **OpenAI-compatible endpoint** — uses Ollama's `/v1/chat/completions` API transparently
+- **Structured output disabled** — Ollama supports JSON mode but not strict schema, handled correctly
+
+### Air-Gap Friendly Update Management
+
+- **No automatic update checks** — the app makes zero network requests on startup regarding updates
+- **Manual check button** in Settings → About — click to check, see results, download if needed
+- **Verbose error reporting** — if a proxy blocks the request, the full error message is shown along with a hint about GitHub HTTPS connectivity
+- **Update states**: Checking → Up to date / Version X.Y.Z available → Downloading (with progress) → Installing
+
+### Rebranding
+
+- **Jacter** product name, `com.mediatros.jacter` app identifier
+- Separate development build identifier for running dev and production side-by-side
+
+---
+
+## What Parler Added (Inherited)
+
+### Multi-Provider Post-Processing
+
+- **Unified provider system** — post-process transcriptions with AI: OpenAI, Groq, Cerebras, Anthropic, OpenRouter, Gemini, Apple Intelligence (macOS ARM64), Ollama (Jacter addition)
+- **Saved processing models** — save provider + model combinations for quick reuse
+- **Numbered actions (1–9)** — up to 9 custom post-processing actions with their own prompt and model, triggered via keyboard shortcuts during recording
+- **Post-processing promoted to stable** — its own settings tab, no longer behind experimental
+- **System prompt enforcement** — action processing outputs only the final processed text
+
+### History Improvements
+
+- **Post-processing tracking** — stores which action was used, shows original and post-processed text side by side
+- **Model name tracking** — history entries record which transcription model was used
+- **History reprocessing** — re-transcribe previously recorded audio with a different model directly from history
+
+### Recording Overlay Redesign
+
+- **Minimal overlay UI** — border-based style
+- **Pause/Resume** — pause and resume recording with a dedicated shortcut (F6) and overlay button
+- **Double-press cancel confirmation** — cancel requires two presses within 1.5 s to prevent accidental cancellations
+- **Multi-monitor support** — intelligent fallback across monitors, handles mixed-DPI setups on macOS
+
+### Audio & System Integration
+
+- **Mute-aware audio feedback** — skips feedback sounds when system volume is muted (macOS + Windows)
+- **Recommended model badges** — Parakeet V3 and Whisper Turbo marked as "Recommended" in the model selector
+
+### CLI Parameters
+
+See [CLI Parameters](#cli-parameters) below.
+
+---
 
 ## How It Works
 
 1. **Press** a configurable keyboard shortcut to start/stop recording (or use push-to-talk mode)
 2. **Speak** your words while the shortcut is active
-3. **Release** and Parler processes your speech using Whisper
+3. **Release** and Jacter processes your speech using Whisper or Parakeet
 4. **Get** your transcribed text pasted directly into whatever app you're using
 
 The process is entirely local:
@@ -62,16 +75,18 @@ The process is entirely local:
 - Silence is filtered using VAD (Voice Activity Detection) with Silero
 - Transcription uses your choice of models:
   - **Whisper models** (Small/Medium/Turbo/Large) with GPU acceleration when available
-  - **Parakeet V3** - CPU-optimized model with excellent performance and automatic language detection
-- Works on Windows, macOS, and Linux
+  - **Parakeet V3** — CPU-optimized, excellent performance, automatic language detection
+- Optionally post-processed by a local or cloud LLM
+
+---
 
 ## Quick Start
 
 ### Installation
 
-1. Download the latest release from the [releases page](https://github.com/Melvynx/Parler/releases)
+1. Download the latest release from the [releases page](https://github.com/Mediatros/Jacter/releases)
 2. Install the application
-3. Launch Parler and grant necessary system permissions (microphone, accessibility)
+3. Launch Jacter and grant necessary system permissions (microphone, accessibility)
 4. Configure your preferred keyboard shortcuts in Settings
 5. Start transcribing!
 
@@ -79,9 +94,33 @@ The process is entirely local:
 
 For detailed build instructions including platform-specific requirements, see [BUILD.md](BUILD.md).
 
+**Prerequisites:** [Rust](https://rustup.rs/) (latest stable), [Bun](https://bun.sh/)
+
+```bash
+# Install dependencies
+bun install
+
+# Run in development mode
+bun run tauri dev
+# If cmake error on macOS:
+CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri dev
+
+# Build for production
+bun run tauri build
+```
+
+**VAD model (required):**
+
+```bash
+mkdir -p src-tauri/resources/models
+curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.computer/silero_vad_v4.onnx
+```
+
+---
+
 ## Architecture
 
-Parler is built as a Tauri application combining:
+Jacter is built as a Tauri 2.x application combining:
 
 - **Frontend**: React + TypeScript with Tailwind CSS for the settings UI
 - **Backend**: Rust for system integration, audio processing, and ML inference
@@ -95,66 +134,63 @@ Parler is built as a Tauri application combining:
 
 ### Debug Mode
 
-Parler includes an advanced debug mode for development and troubleshooting. Access it by pressing:
+Access debug features by pressing:
 
 - **macOS**: `Cmd+Shift+D`
 - **Windows/Linux**: `Ctrl+Shift+D`
 
 ### CLI Parameters
 
-Parler supports command-line flags for controlling a running instance and customizing startup behavior. These work on all platforms (macOS, Windows, Linux).
+Jacter supports command-line flags for controlling a running instance and customizing startup behavior on all platforms.
 
 **Remote control flags** (sent to an already-running instance via the single-instance plugin):
 
 ```bash
-handy --toggle-transcription    # Toggle recording on/off
-handy --toggle-post-process     # Toggle recording with post-processing on/off
-handy --cancel                  # Cancel the current operation
+jacter --toggle-transcription    # Toggle recording on/off
+jacter --toggle-post-process     # Toggle recording with post-processing on/off
+jacter --cancel                  # Cancel the current operation
 ```
 
 **Startup flags:**
 
 ```bash
-handy --start-hidden            # Start without showing the main window
-handy --no-tray                 # Start without the system tray icon
-handy --debug                   # Enable debug mode with verbose logging
-handy --help                    # Show all available flags
+jacter --start-hidden            # Start without showing the main window
+jacter --no-tray                 # Start without the system tray icon
+jacter --debug                   # Enable debug mode with verbose logging
+jacter --help                    # Show all available flags
 ```
 
-Flags can be combined for autostart scenarios:
+Flags can be combined:
 
 ```bash
-handy --start-hidden --no-tray
+jacter --start-hidden --no-tray
 ```
 
-> **macOS tip:** When Parler is installed as an app bundle, invoke the binary directly:
+> **macOS tip:** When Jacter is installed as an app bundle, invoke the binary directly:
 >
 > ```bash
-> /Applications/Parler.app/Contents/MacOS/Parler --toggle-transcription
+> /Applications/Jacter.app/Contents/MacOS/Jacter --toggle-transcription
 > ```
 
-## Known Issues & Current Limitations
+---
 
-This project is actively being developed and has some [known issues](https://github.com/Melvynx/Parler/issues). We believe in transparency about the current state:
+## Known Issues & Current Limitations
 
 ### Major Issues (Help Wanted)
 
 **Whisper Model Crashes:**
 
 - Whisper models crash on certain system configurations (Windows and Linux)
-- Does not affect all systems - issue is configuration-dependent
-  - If you experience crashes and are a developer, please help to fix and provide debug logs!
+- Does not affect all systems — if you experience crashes and are a developer, please help and provide debug logs
 
 **Wayland Support (Linux):**
 
 - Limited support for Wayland display server
-- Requires [`wtype`](https://github.com/atx/wtype) or [`dotool`](https://sr.ht/~geb/dotool/) for text input to work correctly (see [Linux Notes](#linux-notes) below for installation)
+- Requires [`wtype`](https://github.com/atx/wtype) or [`dotool`](https://sr.ht/~geb/dotool/) for text input (see [Linux Notes](#linux-notes) below)
 
 ### Linux Notes
 
 **Text Input Tools:**
-
-For reliable text input on Linux, install the appropriate tool for your display server:
 
 | Display Server | Recommended Tool | Install Command                                    |
 | -------------- | ---------------- | -------------------------------------------------- |
@@ -162,136 +198,114 @@ For reliable text input on Linux, install the appropriate tool for your display 
 | Wayland        | `wtype`          | `sudo apt install wtype`                           |
 | Both           | `dotool`         | `sudo apt install dotool` (requires `input` group) |
 
-- **X11**: Install `xdotool` for both direct typing and clipboard paste shortcuts
-- **Wayland**: Install `wtype` (preferred) or `dotool` for text input to work correctly
-- **dotool setup**: Requires adding your user to the `input` group: `sudo usermod -aG input $USER` (then log out and back in)
-
-Without these tools, Parler falls back to enigo which may have limited compatibility, especially on Wayland.
+- **dotool setup**: `sudo usermod -aG input $USER` then log out and back in
+- Without these tools, Jacter falls back to enigo which may have limited Wayland compatibility
 
 **Other Notes:**
 
-- **Runtime library dependency (`libgtk-layer-shell.so.0`)**:
-  - Parler links `gtk-layer-shell` on Linux. If startup fails with `error while loading shared libraries: libgtk-layer-shell.so.0`, install the runtime package for your distro:
+- **`libgtk-layer-shell.so.0`**: If startup fails with a missing library error, install:
 
-    | Distro        | Package to install    | Example command                        |
-    | ------------- | --------------------- | -------------------------------------- |
-    | Ubuntu/Debian | `libgtk-layer-shell0` | `sudo apt install libgtk-layer-shell0` |
-    | Fedora/RHEL   | `gtk-layer-shell`     | `sudo dnf install gtk-layer-shell`     |
-    | Arch Linux    | `gtk-layer-shell`     | `sudo pacman -S gtk-layer-shell`       |
+  | Distro        | Package               | Command                                |
+  | ------------- | --------------------- | -------------------------------------- |
+  | Ubuntu/Debian | `libgtk-layer-shell0` | `sudo apt install libgtk-layer-shell0` |
+  | Fedora/RHEL   | `gtk-layer-shell`     | `sudo dnf install gtk-layer-shell`     |
+  | Arch Linux    | `gtk-layer-shell`     | `sudo pacman -S gtk-layer-shell`       |
 
-  - For building from source on Ubuntu/Debian, you may also need `libgtk-layer-shell-dev`.
+- The recording overlay is **disabled by default on Linux** (`Overlay Position: None`) because certain compositors treat it as the active window and steal focus, which prevents pasting back into the right application
+- If you have rendering issues, try `WEBKIT_DISABLE_DMABUF_RENDERER=1`
 
-- The recording overlay is disabled by default on Linux (`Overlay Position: None`) because certain compositors treat it as the active window. When the overlay is visible it can steal focus, which prevents Parler from pasting back into the application that triggered transcription. If you enable the overlay anyway, be aware that clipboard-based pasting might fail or end up in the wrong window.
-- If you are having trouble with the app, running with the environment variable `WEBKIT_DISABLE_DMABUF_RENDERER=1` may help
-- **Global keyboard shortcuts (Wayland):** On Wayland, system-level shortcuts must be configured through your desktop environment or window manager. Use the [CLI flags](#cli-parameters) as the command for your custom shortcut.
+**Global keyboard shortcuts on Wayland:**
 
-  **GNOME:**
-  1. Open **Settings > Keyboard > Keyboard Shortcuts > Custom Shortcuts**
-  2. Click the **+** button to add a new shortcut
-  3. Set the **Name** to `Toggle Parler Transcription`
-  4. Set the **Command** to `handy --toggle-transcription`
-  5. Click **Set Shortcut** and press your desired key combination (e.g., `Super+O`)
+On Wayland, system-level shortcuts must be configured through your desktop environment. Use the [CLI flags](#cli-parameters) as the command.
 
-  **KDE Plasma:**
-  1. Open **System Settings > Shortcuts > Custom Shortcuts**
-  2. Click **Edit > New > Global Shortcut > Command/URL**
-  3. Name it `Toggle Parler Transcription`
-  4. In the **Trigger** tab, set your desired key combination
-  5. In the **Action** tab, set the command to `handy --toggle-transcription`
+*GNOME:*
 
-  **Sway / i3:**
+1. Settings → Keyboard → Custom Shortcuts → **+**
+2. Name: `Toggle Jacter`, Command: `jacter --toggle-transcription`, set your shortcut
 
-  Add to your config file (`~/.config/sway/config` or `~/.config/i3/config`):
+*KDE Plasma:*
 
-  ```ini
-  bindsym $mod+o exec handy --toggle-transcription
-  ```
+1. System Settings → Shortcuts → Custom Shortcuts → Edit → New → Global Shortcut → Command/URL
+2. Trigger: your key combination, Action: `jacter --toggle-transcription`
 
-  **Hyprland:**
+*Sway / i3:*
 
-  Add to your config file (`~/.config/hypr/hyprland.conf`):
+```ini
+bindsym $mod+o exec jacter --toggle-transcription
+```
 
-  ```ini
-  bind = $mainMod, O, exec, handy --toggle-transcription
-  ```
+*Hyprland:*
 
-- You can also manage global shortcuts outside of Parler via Unix signals, which lets Wayland window managers or other hotkey daemons keep ownership of keybindings:
+```ini
+bind = $mainMod, O, exec, jacter --toggle-transcription
+```
 
-  | Signal    | Action                                    | Example                |
-  | --------- | ----------------------------------------- | ---------------------- |
-  | `SIGUSR2` | Toggle transcription                      | `pkill -USR2 -n handy` |
-  | `SIGUSR1` | Toggle transcription with post-processing | `pkill -USR1 -n handy` |
+**Unix signals (alternative to CLI flags):**
 
-  Example Sway config:
+| Signal    | Action                                    | Example                  |
+| --------- | ----------------------------------------- | ------------------------ |
+| `SIGUSR2` | Toggle transcription                      | `pkill -USR2 -n jacter`  |
+| `SIGUSR1` | Toggle transcription with post-processing | `pkill -USR1 -n jacter`  |
 
-  ```ini
-  bindsym $mod+o exec pkill -USR2 -n handy
-  bindsym $mod+p exec pkill -USR1 -n handy
-  ```
+Example Sway config:
 
-  `pkill` here simply delivers the signal—it does not terminate the process.
+```ini
+bindsym $mod+o exec pkill -USR2 -n jacter
+bindsym $mod+p exec pkill -USR1 -n jacter
+```
+
+`pkill` here delivers the signal — it does not terminate the process.
 
 ### Platform Support
 
-- **macOS (both Intel and Apple Silicon)**
+- **macOS** (Intel and Apple Silicon)
 - **x64 Windows**
 - **x64 Linux**
 
-### System Requirements/Recommendations
+### System Requirements
 
-The following are recommendations for running Parler on your own machine. If you don't meet the system requirements, the performance of the application may be degraded. We are working on improving the performance across all kinds of computers and hardware.
-
-**For Whisper Models:**
+**Whisper Models:**
 
 - **macOS**: M series Mac, Intel Mac
 - **Windows**: Intel, AMD, or NVIDIA GPU
-- **Linux**: Intel, AMD, or NVIDIA GPU
-  - Ubuntu 22.04, 24.04
+- **Linux**: Intel, AMD, or NVIDIA GPU (Ubuntu 22.04 / 24.04)
 
-**For Parakeet V3 Model:**
+**Parakeet V3 Model:**
 
-- **CPU-only operation** - runs on a wide variety of hardware
-- **Minimum**: Intel Skylake (6th gen) or equivalent AMD processors
-- **Performance**: ~5x real-time speed on mid-range hardware (tested on i5)
-- **Automatic language detection** - no manual language selection required
+- **CPU-only** — runs on a wide variety of hardware
+- **Minimum**: Intel Skylake (6th gen) or equivalent AMD
+- **Performance**: ~5× real-time speed on mid-range hardware
+- **Automatic language detection** — no manual language selection required
+
+---
 
 ## Troubleshooting
 
-### Manual Model Installation (For Proxy Users or Network Restrictions)
+### Manual Model Installation (For Proxy / Restricted Networks)
 
-If you're behind a proxy, firewall, or in a restricted network environment where Parler cannot download models automatically, you can manually download and install them. The URLs are publicly accessible from any browser.
+If Jacter cannot download models automatically, you can place them manually.
 
 #### Step 1: Find Your App Data Directory
 
-1. Open Parler settings
-2. Navigate to the **About** section
-3. Copy the "App Data Directory" path shown there, or use the shortcuts:
-   - **macOS**: `Cmd+Shift+D` to open debug menu
-   - **Windows/Linux**: `Ctrl+Shift+D` to open debug menu
+Open Settings → About → "App Data Directory". Typical paths:
 
-The typical paths are:
+- **macOS**: `~/Library/Application Support/com.mediatros.jacter/`
+- **Windows**: `C:\Users\{username}\AppData\Roaming\com.mediatros.jacter\`
+- **Linux**: `~/.config/com.mediatros.jacter/`
 
-- **macOS**: `~/Library/Application Support/com.pais.handy/`
-- **Windows**: `C:\Users\{username}\AppData\Roaming\com.pais.handy\`
-- **Linux**: `~/.config/com.pais.handy/`
-
-#### Step 2: Create Models Directory
-
-Inside your app data directory, create a `models` folder if it doesn't already exist:
+#### Step 2: Create the Models Directory
 
 ```bash
 # macOS/Linux
-mkdir -p ~/Library/Application\ Support/com.pais.handy/models
+mkdir -p "~/Library/Application Support/com.mediatros.jacter/models"
 
 # Windows (PowerShell)
-New-Item -ItemType Directory -Force -Path "$env:APPDATA\com.pais.handy\models"
+New-Item -ItemType Directory -Force -Path "$env:APPDATA\com.mediatros.jacter\models"
 ```
 
 #### Step 3: Download Model Files
 
-Download the models you want from below
-
-**Whisper Models (single .bin files):**
+**Whisper Models (single `.bin` files):**
 
 - Small (487 MB): `https://blob.handy.computer/ggml-small.bin`
 - Medium (492 MB): `https://blob.handy.computer/whisper-medium-q4_1.bin`
@@ -303,78 +317,43 @@ Download the models you want from below
 - V2 (473 MB): `https://blob.handy.computer/parakeet-v2-int8.tar.gz`
 - V3 (478 MB): `https://blob.handy.computer/parakeet-v3-int8.tar.gz`
 
-#### Step 4: Install Models
+#### Step 4: Install
 
-**For Whisper Models (.bin files):**
+**Whisper:** place the `.bin` directly in the `models` directory.
 
-Simply place the `.bin` file directly into the `models` directory:
+**Parakeet:** extract the `.tar.gz` and place the extracted directory in `models`. Directory names must be exact:
 
 ```
 {app_data_dir}/models/
 ├── ggml-small.bin
-├── whisper-medium-q4_1.bin
-├── ggml-large-v3-turbo.bin
-└── ggml-large-v3-q5_0.bin
+├── parakeet-tdt-0.6b-v2-int8/
+└── parakeet-tdt-0.6b-v3-int8/
 ```
 
-**For Parakeet Models (.tar.gz archives):**
-
-1. Extract the `.tar.gz` file
-2. Place the **extracted directory** into the `models` folder
-3. The directory must be named exactly as follows:
-   - **Parakeet V2**: `parakeet-tdt-0.6b-v2-int8`
-   - **Parakeet V3**: `parakeet-tdt-0.6b-v3-int8`
-
-Final structure should look like:
-
-```
-{app_data_dir}/models/
-├── parakeet-tdt-0.6b-v2-int8/     (directory with model files inside)
-│   ├── (model files)
-│   └── (config files)
-└── parakeet-tdt-0.6b-v3-int8/     (directory with model files inside)
-    ├── (model files)
-    └── (config files)
-```
-
-**Important Notes:**
-
-- For Parakeet models, the extracted directory name **must** match exactly as shown above
-- Do not rename the `.bin` files for Whisper models—use the exact filenames from the download URLs
-- After placing the files, restart Parler to detect the new models
-
-#### Step 5: Verify Installation
-
-1. Restart Parler
-2. Open Settings → Models
-3. Your manually installed models should now appear as "Downloaded"
-4. Select the model you want to use and test transcription
+After placing the files, restart Jacter. The models will appear as "Downloaded" in Settings → Models.
 
 ### Custom Whisper Models
 
-Parler can auto-discover custom Whisper GGML models placed in the `models` directory. This is useful for users who want to use fine-tuned or community models not included in the default model list.
+Jacter auto-discovers custom Whisper GGML models (`.bin`) placed in the `models` directory. They appear in the "Custom Models" section of Settings → Models.
 
-**How to use:**
+### Checking for Updates Behind a Proxy
 
-1. Obtain a Whisper model in GGML `.bin` format (e.g., from [Hugging Face](https://huggingface.co/models?search=whisper%20ggml))
-2. Place the `.bin` file in your `models` directory (see paths above)
-3. Restart Parler to discover the new model
-4. The model will appear in the "Custom Models" section of the Models settings page
+Jacter never checks for updates automatically. To check manually: Settings → About → **Check for updates**.
 
-**Important:**
+If the check fails, the full error is displayed. Common cause: the proxy blocks outbound HTTPS to `github.com` or `objects.githubusercontent.com`. Configure your proxy to allow these domains, or download the update manually from the [releases page](https://github.com/Mediatros/Jacter/releases).
 
-- Community models are user-provided and may not receive troubleshooting assistance
-- The model must be a valid Whisper GGML format (`.bin` file)
-- Model name is derived from the filename (e.g., `my-custom-model.bin` → "My Custom Model")
+---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- **[cjpais/Handy](https://github.com/cjpais/Handy)** - the original project this fork is based on
+- **[Melvynx/Parler](https://github.com/Melvynx/Parler)** — the direct upstream fork this project is based on
+- **[cjpais/Handy](https://github.com/cjpais/Handy)** — the original project
 - **Whisper** by OpenAI for the speech recognition model
-- **whisper.cpp and ggml** for cross-platform whisper inference/acceleration
+- **whisper.cpp and ggml** by Georgi Gerganov for cross-platform inference
 - **Silero** for lightweight VAD
 - **Tauri** for the Rust-based app framework
+- **Ollama** for making local LLM inference accessible
