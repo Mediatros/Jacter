@@ -87,7 +87,7 @@
     },
     "permissions": {
       "title": "Permissions Required",
-      "description": "Parler needs a couple of permissions to work properly.",
+      "description": "Jacter needs a couple of permissions to work properly.",
       "microphone": {
         "title": "Microphone Access",
         "description": "Required to hear your voice for transcription."
@@ -154,7 +154,7 @@
     "general": {
       "title": "General",
       "shortcut": {
-        "title": "Parler Shortcuts",
+        "title": "Jacter Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
         "loading": "Loading shortcuts...",
         "none": "No shortcuts configured",
@@ -282,11 +282,11 @@
       },
       "autostart": {
         "label": "Launch on Startup",
-        "description": "Automatically start Parler when you log in to your computer."
+        "description": "Automatically start Jacter when you log in to your computer."
       },
       "showTrayIcon": {
         "label": "Show Tray Icon",
-        "description": "Display the Parler icon in the system tray."
+        "description": "Display the Jacter icon in the system tray."
       },
       "overlay": {
         "title": "Overlay Position",
@@ -380,6 +380,14 @@
           "description": "Runs fully on-device. No API key or network access is required.",
           "requirements": "Requires an Apple Silicon Mac running macOS Tahoe (26.0) or later. Apple Intelligence must be enabled in System Settings.",
           "unavailable": "Apple Intelligence is not available on this device. Requires an Apple Silicon Mac running macOS Tahoe (26.0) or later with Apple Intelligence enabled in System Settings."
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Runs locally via Ollama. No API key required.",
+          "requirements": "Requires Ollama to be installed and running. Start it with 'ollama serve'.",
+          "notRunning": "Ollama is not running. Start it with 'ollama serve' or check that the URL is correct.",
+          "connected": "Connected",
+          "checking": "Checking connection..."
         },
         "baseUrl": {
           "title": "Base URL",
@@ -488,7 +496,7 @@
       },
       "updateChecks": {
         "label": "Check for Updates",
-        "description": "Automatically check for new versions of Parler"
+        "description": "Automatically check for new versions of Jacter"
       },
       "soundTheme": {
         "label": "Sound Theme",
@@ -552,11 +560,11 @@
       "title": "About",
       "version": {
         "title": "Version",
-        "description": "Current version of Parler"
+        "description": "Current version of Jacter"
       },
       "appDataDirectory": {
         "title": "App Data Directory",
-        "description": "Location where Parler stores its data"
+        "description": "Location where Jacter stores its data"
       },
       "exportImport": {
         "title": "Export / Import Settings",
@@ -573,7 +581,7 @@
       },
       "supportDevelopment": {
         "title": "Support Development",
-        "description": "Help us continue building Parler",
+        "description": "Help us continue building Jacter",
         "button": "Donate"
       },
       "acknowledgments": {
@@ -581,7 +589,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "High-performance inference of OpenAI's Whisper automatic speech recognition model",
-          "details": "Parler uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
+          "details": "Jacter uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
       }
     }
@@ -624,7 +632,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Accessibility Permissions Required",
-    "permissionsDescription": "Parler needs accessibility permissions to type transcribed text.",
+    "permissionsDescription": "Jacter needs accessibility permissions to type transcribed text.",
     "openSettings": "Open System Settings",
     "dismiss": "Dismiss"
   },
@@ -633,7 +641,7 @@
   },
   "appLanguage": {
     "title": "Application Language",
-    "description": "Change the language of the Parler interface"
+    "description": "Change the language of the Jacter interface"
   },
   "overlay": {
     "transcribing": "Transcribing...",

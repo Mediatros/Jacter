@@ -289,6 +289,7 @@ pub fn run(cli_args: CliArgs) {
         shortcut::change_post_process_model_setting,
         shortcut::set_post_process_provider,
         shortcut::fetch_post_process_models,
+        shortcut::check_ollama_status,
         shortcut::add_post_process_prompt,
         shortcut::update_post_process_prompt,
         shortcut::delete_post_process_prompt,
@@ -478,9 +479,8 @@ pub fn run(cli_args: CliArgs) {
                 api.prevent_close();
                 let _res = window.hide();
 
-                let tray_visible =
-                    TRAY_ICON_ENABLED.load(Ordering::Relaxed)
-                        && !window.app_handle().state::<CliArgs>().no_tray;
+                let tray_visible = TRAY_ICON_ENABLED.load(Ordering::Relaxed)
+                    && !window.app_handle().state::<CliArgs>().no_tray;
 
                 #[cfg(target_os = "macos")]
                 {

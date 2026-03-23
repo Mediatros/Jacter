@@ -24,6 +24,10 @@ const modelSupportsLanguage = (model: ModelInfo, langCode: string): boolean => {
   return model.supported_languages.includes(langCode);
 };
 
+type OllamaStatus = "idle" | "checking" | "connected" | "not-running";
+
+const OLLAMA_PROVIDER_ID = "ollama";
+
 const ProcessingModelsSection: React.FC = () => {
   const { t } = useTranslation();
   const {
@@ -39,6 +43,7 @@ const ProcessingModelsSection: React.FC = () => {
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [isFetching, setIsFetching] = useState(false);
+  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>("idle");
 
   const savedModels = getSetting("saved_processing_models") || [];
   const providers = settings?.post_process_providers || [];
@@ -60,9 +65,29 @@ const ProcessingModelsSection: React.FC = () => {
       setSelectedModel("");
       const existingKey = settings?.post_process_api_keys?.[providerId] ?? "";
       setApiKey(existingKey);
+      if (providerId !== OLLAMA_PROVIDER_ID) {
+        setOllamaStatus("idle");
+      }
     },
     [settings],
   );
+
+  useEffect(() => {
+    if (selectedProviderId !== OLLAMA_PROVIDER_ID) return;
+    let cancelled = false;
+    setOllamaStatus("checking");
+    commands.checkOllamaStatus(OLLAMA_PROVIDER_ID).then((result) => {
+      if (cancelled) return;
+      if (result.status === "ok") {
+        setOllamaStatus(result.data ? "connected" : "not-running");
+      } else {
+        setOllamaStatus("not-running");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProviderId]);
 
   const handleFetchModels = useCallback(async () => {
     if (!selectedProviderId) return;
@@ -166,24 +191,53 @@ const ProcessingModelsSection: React.FC = () => {
               onSelect={handleProviderChange}
               placeholder={t("settings.models.processingModels.provider")}
             />
+            {selectedProviderId === OLLAMA_PROVIDER_ID && (
+              <div className="mt-1.5">
+                {ollamaStatus === "checking" && (
+                  <p className="text-xs text-text/50 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-mid-gray/60 animate-pulse inline-block" />
+                    {t("settings.postProcessing.api.ollama.checking")}
+                  </p>
+                )}
+                {ollamaStatus === "connected" && (
+                  <p className="text-xs text-green-500 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                    {t("settings.postProcessing.api.ollama.connected")}
+                  </p>
+                )}
+                {ollamaStatus === "not-running" && (
+                  <p className="text-xs text-red-400 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                    {t("settings.postProcessing.api.ollama.notRunning")}
+                  </p>
+                )}
+                {ollamaStatus === "idle" && (
+                  <p className="text-xs text-text/50">
+                    {t("settings.postProcessing.api.ollama.description")}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {selectedProviderId && (
             <>
-              <div className="space-y-1">
-                <label className="text-sm font-semibold">
-                  {t("settings.models.processingModels.apiKey")}
-                </label>
-                <Input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={t(
-                    "settings.models.processingModels.apiKeyPlaceholder",
-                  )}
-                  variant="compact"
-                />
-              </div>
+              {selectedProviderId !== OLLAMA_PROVIDER_ID && (
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">
+                    {t("settings.models.processingModels.apiKey")}
+                  </label>
+                  <Input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder={t(
+                      "settings.models.processingModels.apiKeyPlaceholder",
+                    )}
+                    variant="compact"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-sm font-semibold">
@@ -214,7 +268,11 @@ const ProcessingModelsSection: React.FC = () => {
                   )}
                   <button
                     onClick={handleFetchModels}
-                    disabled={isFetching || !apiKey.trim()}
+                    disabled={
+                      isFetching ||
+                      (selectedProviderId !== OLLAMA_PROVIDER_ID &&
+                        !apiKey.trim())
+                    }
                     className="flex items-center justify-center h-8 w-8 rounded-md bg-mid-gray/10 hover:bg-mid-gray/20 transition-colors disabled:opacity-40"
                     title={t("settings.models.processingModels.fetchModels")}
                   >

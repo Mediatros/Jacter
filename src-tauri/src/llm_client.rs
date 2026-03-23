@@ -261,6 +261,31 @@ pub async fn fetch_models(
     Ok(models)
 }
 
+pub async fn check_ollama_connection(base_url: &str) -> Result<bool, String> {
+    let root_url = base_url
+        .trim_end_matches('/')
+        .trim_end_matches("/v1")
+        .to_string();
+    let url = format!("{}/", root_url);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
+
+    match client.get(&url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                let body = response.text().await.unwrap_or_default();
+                Ok(body.contains("Ollama is running"))
+            } else {
+                Ok(false)
+            }
+        }
+        Err(_) => Ok(false),
+    }
+}
+
 async fn fetch_gemini_models(api_key: &str) -> Result<Vec<String>, String> {
     let url = "https://generativelanguage.googleapis.com/v1beta/models";
 
